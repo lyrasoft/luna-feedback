@@ -105,9 +105,9 @@ class Rating implements EntityInterface
         return $this->targetId;
     }
 
-    public function setTargetId(int $targetId): static
+    public function setTargetId(mixed $targetId): static
     {
-        $this->targetId = $targetId;
+        $this->targetId = (int) $targetId;
 
         return $this;
     }
@@ -117,9 +117,9 @@ class Rating implements EntityInterface
         return $this->userId;
     }
 
-    public function setUserId(int $userId): static
+    public function setUserId(mixed $userId): static
     {
-        $this->userId = $userId;
+        $this->userId = (int) $userId;
 
         return $this;
     }
