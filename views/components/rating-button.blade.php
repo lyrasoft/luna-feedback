@@ -29,7 +29,7 @@ use Windwalker\Edge\Component\ComponentAttributes;
  * @var $attributes ComponentAttributes
  */
 
-$app->retrieve(FeedbackScript::class)->ratingButton($loginUrl);
+$app->retrieve(FeedbackScript::class)->ratingButton();
 ?>
 <{{ $tag }} {!! $attributes !!}>
 @if (isset($slot))

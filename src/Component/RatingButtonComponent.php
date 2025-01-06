@@ -44,9 +44,6 @@ class RatingButtonComponent extends AbstractComponent
     #[Prop]
     public string $titleInactive = '';
 
-    #[Prop]
-    public mixed $loginUrl = null;
-
     public function __construct(protected RatingService $ratingService)
     {
     }

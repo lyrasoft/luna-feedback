@@ -36,11 +36,15 @@ class RatingController
         $type = $app->input('type');
         $rank = (int) $app->input('rank');
 
-        $allowTypes = (array) ($feedback->config('rating.ajax_allow_types') ?? []);
-        $allowTypes = array_map(\Windwalker\unwrap_enum(...), $allowTypes);
+        $protect = (bool) $feedback->config('rating.ajax_type_protect');
 
-        if (!in_array($type, $allowTypes, true)) {
-            throw new UnauthorizedException('Invalid type', 401);
+        if ($protect) {
+            $allowTypes = (array) ($feedback->config('rating.ajax_allow_types') ?? []);
+            $allowTypes = array_map(\Windwalker\unwrap_enum(...), $allowTypes);
+
+            if (!in_array($type, $allowTypes, true)) {
+                throw new UnauthorizedException('Invalid type', 401);
+            }
         }
 
         $user = $userService->getUser();
@@ -71,13 +75,16 @@ class RatingController
 
         $targetId = $app->input('targetId');
         $type = $app->input('type');
-        $rank = (int) $app->input('rank');
 
-        $allowTypes = (array) ($feedback->config('rating.ajax_allow_types') ?? []);
-        $allowTypes = array_map(\Windwalker\unwrap_enum(...), $allowTypes);
+        $protect = (bool) $feedback->config('rating.ajax_type_protect');
 
-        if (!in_array($type, $allowTypes, true)) {
-            throw new UnauthorizedException('Invalid type', 401);
+        if ($protect) {
+            $allowTypes = (array) ($feedback->config('rating.ajax_allow_types') ?? []);
+            $allowTypes = array_map(\Windwalker\unwrap_enum(...), $allowTypes);
+
+            if (!in_array($type, $allowTypes, true)) {
+                throw new UnauthorizedException('Invalid type', 401);
+            }
         }
 
         $user = $userService->getUser();
