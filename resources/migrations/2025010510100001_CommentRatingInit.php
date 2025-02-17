@@ -83,6 +83,6 @@ $mig->up(
  */
 $mig->down(
     static function () use ($mig) {
-        $mig->dropTables(Rating::class);
+        $mig->dropTables(Rating::class, Comment::class);
     }
 );
