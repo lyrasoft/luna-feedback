@@ -22,8 +22,8 @@ use Windwalker\ORM\EntityTrait;
 use Windwalker\ORM\Event\EnergizeEvent;
 use Windwalker\ORM\Metadata\EntityMetadata;
 
-use function Windwalker\unwrap_enum;
-
+// phpcs:disable
+// todo: remove this when phpcs supports 8.4
 #[Table('ratings', 'rating')]
 #[\AllowDynamicProperties]
 class Rating implements EntityInterface
@@ -31,36 +31,40 @@ class Rating implements EntityInterface
     use EntityTrait;
 
     #[Column('id'), PK, AutoIncrement]
-    protected ?int $id = null;
+    public ?int $id = null;
 
     #[Column('target_id')]
-    protected int $targetId = 0;
+    public int|string $targetId = 0;
 
     #[Column('user_id')]
-    protected int $userId = 0;
+    public int $userId = 0;
 
     #[Column('type')]
-    protected string $type = '';
+    public string $type = '';
 
     #[Column('rank')]
-    protected float $rank = 0.0;
+    public float $rank = 0.0;
 
     #[Column('ordering')]
-    protected int $ordering = 0;
+    public int $ordering = 0;
 
     #[Column('created')]
     #[CastNullable(ServerTimeCast::class)]
     #[CreatedTime]
-    protected ?Chronos $created = null;
+    public ?Chronos $created = null {
+        set(\DateTimeInterface|string|null $value) => $this->created = Chronos::tryWrap($value);
+    }
 
     #[Column('modified')]
     #[CastNullable(ServerTimeCast::class)]
     #[CurrentTime]
-    protected ?Chronos $modified = null;
+    public ?Chronos $modified = null {
+        set(\DateTimeInterface|string|null $value) => $this->modified = Chronos::tryWrap($value);
+    }
 
     #[Column('params')]
     #[Cast(JsonCast::class)]
-    protected array $params = [];
+    public array $params = [];
 
     #[EntitySetup]
     public static function setup(EntityMetadata $metadata): void
@@ -73,7 +77,7 @@ class Rating implements EntityInterface
     {
         $event->storeCallback(
             'rating.service',
-            fn (RatingService $ratingService) => $ratingService
+            fn(RatingService $ratingService) => $ratingService
         );
     }
 
@@ -82,117 +86,6 @@ class Rating implements EntityInterface
         /** @var RatingService $ratingService */
         $ratingService = $this->retrieveMeta('rating.service')();
 
-        return $ratingService->countRatings(
-            $this->getType(),
-            $this->getTargetId(),
-        );
-    }
-
-    public function getId(): ?int
-    {
-        return $this->id;
-    }
-
-    public function setId(?int $id): static
-    {
-        $this->id = $id;
-
-        return $this;
-    }
-
-    public function getTargetId(): int
-    {
-        return $this->targetId;
-    }
-
-    public function setTargetId(mixed $targetId): static
-    {
-        $this->targetId = (int) $targetId;
-
-        return $this;
-    }
-
-    public function getUserId(): int
-    {
-        return $this->userId;
-    }
-
-    public function setUserId(mixed $userId): static
-    {
-        $this->userId = (int) $userId;
-
-        return $this;
-    }
-
-    public function getType(): string
-    {
-        return $this->type;
-    }
-
-    public function setType(string|\BackedEnum $type): static
-    {
-        $this->type = unwrap_enum($type);
-
-        return $this;
-    }
-
-    public function getRank(): float
-    {
-        return $this->rank;
-    }
-
-    public function setRank(float $rank): static
-    {
-        $this->rank = $rank;
-
-        return $this;
-    }
-
-    public function getOrdering(): int
-    {
-        return $this->ordering;
-    }
-
-    public function setOrdering(int $ordering): static
-    {
-        $this->ordering = $ordering;
-
-        return $this;
-    }
-
-    public function getCreated(): ?Chronos
-    {
-        return $this->created;
-    }
-
-    public function setCreated(\DateTimeInterface|string|null $created): static
-    {
-        $this->created = Chronos::tryWrap($created);
-
-        return $this;
-    }
-
-    public function getModified(): ?Chronos
-    {
-        return $this->modified;
-    }
-
-    public function setModified(\DateTimeInterface|string|null $modified): static
-    {
-        $this->modified = Chronos::tryWrap($modified);
-
-        return $this;
-    }
-
-    public function getParams(): array
-    {
-        return $this->params;
-    }
-
-    public function setParams(array $params): static
-    {
-        $this->params = $params;
-
-        return $this;
+        return $ratingService->countWith($this);
     }
 }

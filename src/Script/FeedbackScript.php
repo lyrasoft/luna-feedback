@@ -45,7 +45,8 @@ class FeedbackScript extends AbstractScript
 
             $this->unicornScript->addRoute('@rating_ajax');
 
-            $this->js('@feedback/rating-button.js');
+            // $this->js('@feedback/rating-button.js');
+            $this->unicornScript->importMainThen('u.$feedback.useRatingButton();');
         }
     }
 }

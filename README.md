@@ -57,20 +57,20 @@ php windwalker pkg:install lyrasoft/feedback -t lang
 
 ### Seeders
 
-There are 2 example seeders auto installed, add `comment-seeder.php` and `rating-seeder.php` to `resources/seeders/main.php`
+There are 2 example seeders auto installed, add `comment.seeder.php` and `rating.seeder.php` to `resources/seeders/main.php`
 
 ```php
 return [
     // ...
 
-    __DIR__ . '/comment-seeder.php',
-    __DIR__ . '/rating-seeder.php',
+    __DIR__ . '/comment.seeder.php',
+    __DIR__ . '/rating.seeder.php',
 
     // ...
 ];
 ```
 
-If you don't need example seeders, write your own seeder by services:
+If you don't need example seeders, write your own seeder by adding comments through service:
 
 ```php
 foreach ($articleIds as $articleId) {
@@ -103,6 +103,12 @@ You must add `type` to route, every comment should contains type.
 $menu->link('評論管理: 文章')
     ->to($nav->to('comment_list')->var('type', 'article'))
     ->icon('fal fa-comments');
+
+// Or use translations
+
+$menu->link($lang('feedback.comment.list.title', title: $lang('luna.article.title')))
+    ->to($nav->to('comment_list')->var('type', 'article'))
+    ->icon('fal fa-comments');
 ```
 
 ## Comments
@@ -115,7 +121,7 @@ $commentService->addComment(
     'flower', // Type
     $targetId, // Target ID
     'Comment Text...', // Content
-    $user->getId(), // User ID
+    $user->id, // User ID
 );
 ```
 
@@ -129,12 +135,12 @@ $commentService->addComment(
     'flower', // Type
     $targetId, // Target ID
     'Comment Text...', // Content
-    $user->getId(), // User ID
+    $user->id, // User ID
     
     // The extra can be callback or array
     extra: function (Comment $comment) {
-        $comment->setRating(5); // If user mark as 5 star
-        $comment->setNickname('Another nickname');
+        $comment->rating = 5; // If user mark as 5 star
+        $comment->nickname = 'Another nickname';
     }
 );
 ```
@@ -143,14 +149,18 @@ Comments ordering:
 
 ```php
 /** @var \Lyrasoft\Feedback\Service\CommentService $commentService */
-$commentService->addComment(
+$newComment = $commentService->addComment(
     'flower', // Type
     $targetId, // Target ID
     'Comment Text...', // Content
-    $user->getId(), // User ID or User entity
-    extra: function (Comment $comment) {
+    $user->id, // User ID or User entity
+    extra: function (Comment $comment) use ($commentService) {
+        $count = $commentService->countWith($comment);
+        // OR
+        $count = $comment->count();
+    
         // This optional if you want to set ordering to one comment
-        $comment->setOrdering($comment->count() + 1);
+        $comment->ordering = $count + 1;
     }
 );
 
@@ -159,6 +169,10 @@ $commentService->reorderComments(
     'flower', // Type
     $targetId, // Target ID
 );
+
+// OR
+
+$commentService->reorderWith($newComment);
 ```
 
 ### Comment Reply
@@ -171,7 +185,7 @@ There are 2 ways to add reply, one is just write reply content to comment, every
 $commentService->addInstantReply(
     $comment, // Can be ID or entity
     'Reply text...',
-    $user->getId(), // User ID or User entity
+    $user->id, // User ID or User entity
 );
 ```
 
@@ -183,7 +197,7 @@ The other way is to create sub comments:
 $childComment = $commentService->addSubReply(
     $parentComment, // Can be ID or entity
     'Reply text...',
-    $user->getId(), // User ID or User entity
+    $user->id, // User ID or User entity
     extra: function (Comment $comment) {
         // Configure comment entity before save
     }
@@ -191,10 +205,14 @@ $childComment = $commentService->addSubReply(
 
 // Optional: if you want to reorder it.
 $commentService->reorderComments(
-    $parentComment->getType(), // Type
-    $parentComment->getTargetId(), // Target ID
-    $parentComment->getId(), // Parent ID
+    $parentComment->type, // Type
+    $parentComment->targetId, // Target ID
+    $parentComment->id, // Parent ID
 );
+
+// OR
+
+$commentService->reorderWith($childComment);
 ```
 
 ### Other Methods
@@ -223,7 +241,7 @@ Add a rating to a type:
 $ratingService->addRating(
     'flower', // Type
     $targetId, // Target ID
-    $user->getId(), // User ID
+    $user->id, // User ID
 );
 ```
 
@@ -236,11 +254,11 @@ use Lyrasoft\Feedback\Entity\Rating;
 $ratingService->addRatingIfNotRated(
     'flower', // Type
     $targetId, // Target ID
-    $user->getId(), // User ID
+    $user->id, // User ID
     
     // The extra can be callback or array
     extra: function (Rating $rating) {
-        $rating->setRank(4.5); // If user mark as 4.5 star
+        $rating->rank = 4.5; // If user mark as 4.5 star
     }
 );
 ```
@@ -249,13 +267,17 @@ Rating ordering:
 
 ```php
 /** @var \Lyrasoft\Feedback\Service\RatingService $ratingService */
-$ratingService->addRating(
+$newRating = $ratingService->addRating(
     'flower', // Type
     $targetId, // Target ID
-    $user->getId(), // User ID or User entity
-    extra: function (Rating $rating) {
+    $user->id, // User ID or User entity
+    extra: function (Rating $rating) use ($ratingService) {
+        $count = $ratingService->countWith($rating);
+        // OR
+        $count = $rating->count();
+    
         // This optional if you want to set ordering to one comment
-        $rating->setOrdering($rating->count() + 1);
+        $rating->ordering = $count + 1;
     }
 );
 
@@ -264,6 +286,8 @@ $ratingService->reorderRatings(
     'flower', // Type
     $targetId, // Target ID
 );
+// OR
+$ratingService->reorderWith($newRating);
 ```
 
 ### Other Methods
@@ -273,6 +297,7 @@ $ratingService->reorderRatings(
 
 // Calc average rank
 $avg = $ratingService->calcAvgRank($type, $targetId);
+$avg = $ratingService->calcAvgWith($rating);
 
 // Get rating item or check is rated
 $item = $ratingService->getRating($type, $targetId);
@@ -281,13 +306,23 @@ $bool = $ratingService->isRated($type, $targetId);
 
 ## Rating AJAX Button
 
-You can add button component in blade templates:
+Add `useRatingButtons()` to front `main.ts` file:
+
+```ts
+import { useRatingButtons } from '@lyrasoft/feedback';
+
+// ...
+
+useRatingButtons();
+```
+
+Then uou can add button components everywhere in blade template:
 
 ```bladehtml
 <div class="card c-item-card">
     <x-rating-button
         type="item"
-        :id="$item->getId()"
+        :id="$item->id"
         :rated="$item->rated"
         class="..."
     ></x-rating-button>
@@ -317,7 +352,7 @@ Available params:
 
 By default, favorite package will not allow any types sent from browser.
 
-You can configre allowed types in config file:
+You can configure allowed types in config file:
 
 ```php
 return [
@@ -362,14 +397,16 @@ for (const button of buttons) {
 Or listen globally:
 
 ```ts
+import { simpleNotify } from '@windwalker-io/unicorn-next';
+
 document.addEventListener('rated', (e) => {
-  if (e.detail.type === 'comment') {
-    if (e.detail.favorited) {
-      u.notify('已按讚', 'success');
-    } else {
-      u.notify('已收回讚', 'success');
+    if (e.detail.type === 'comment') {
+        if (e.detail.favorited) {
+            simpleNotify('已按讚', 'success');
+        } else {
+            simpleNotify('已收回讚', 'success');
+        }
     }
-  }
 });
 ```
 
@@ -412,7 +449,7 @@ use Lyrasoft\Feedback\Repository\RatingRepository;
             RatingRepository::joinRating(
                 $selector,
                 'item',
-                $user->getId(),
+                $user->id,
                 'item.id'
             );
         }
@@ -428,7 +465,7 @@ In blade:
     ...
     <x-rating-button
         type="item"
-        :id="$item->getId()"
+        :id="$item->id"
         :rated="$item->rated"
         class="..."
     ></x-rating-button>

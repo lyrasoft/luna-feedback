@@ -54,7 +54,7 @@ class RatingController
             $targetId,
             $user,
             extra: function (Rating $item) use ($rank) {
-                $item->setRank((float) $rank);
+                $item->rank = (float) $rank;
             }
         );
 

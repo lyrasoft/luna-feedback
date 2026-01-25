@@ -1,6 +1,6 @@
-import '@main';
+import { data, module, simpleAlert, useBs5Tooltip, useHttpClient, useUniDirective } from '@windwalker-io/unicorn-next';
 
-class RatingButton {
+export class RatingButton {
   icon: HTMLElement | null;
 
   rated: boolean;
@@ -8,7 +8,7 @@ class RatingButton {
   id: string;
 
   constructor(protected el: HTMLElement) {
-    this.icon = el.querySelector('i, span');
+    this.icon = el.querySelector<HTMLElement>('i, span');
     const rated = el.dataset.rated;
 
     this.rated = rated === '1' || rated === 'true';
@@ -24,7 +24,7 @@ class RatingButton {
   }
 
   async toggle() {
-    const config = u.data('rating');
+    const config = data('rating');
 
     if (!config.isLogin) {
       location.href = config.loginUri;
@@ -39,7 +39,9 @@ class RatingButton {
     this.el.dataset.rated = this.rated ? '1' : '0';
 
     try {
-      const res = await u.$http.post(
+      const { post } = await useHttpClient();
+
+      const res = await post(
         `@rating_ajax/${task}`,
         {
           targetId: this.id,
@@ -64,7 +66,7 @@ class RatingButton {
 
       console.error(e);
       if (e instanceof Error) {
-        u.alert(e.message, '', 'warning');
+        simpleAlert(e.message, '', 'warning');
       }
       throw e;
     }
@@ -100,8 +102,8 @@ class RatingButton {
       this.el.setAttribute('data-bs-original-title', this.el.dataset.titleInactive || '');
     }
 
-    setTimeout(() => {
-      const tooltip = u.$ui.bootstrap.tooltip(this.el);
+    setTimeout(async () => {
+      const [tooltip] = await useBs5Tooltip(this.el);
       tooltip.update();
     }, 50);
   }
@@ -111,13 +113,18 @@ class RatingButton {
   }
 }
 
-u.directive(
+export const ready = useUniDirective(
   'rating-button',
   {
     mounted(el: HTMLElement) {
       setTimeout(() => {
-        u.module(el, 'rating.button', () => new RatingButton(el));
+        module(el, 'rating.button', () => new RatingButton(el));
       }, 0);
     }
   }
 );
+
+export interface RatingButtonModule {
+  RatingButton: typeof RatingButton;
+  ready: typeof ready;
+}

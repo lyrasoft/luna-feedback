@@ -28,9 +28,9 @@ class RatingService
 
         $userId = $this->toUserId($user);
 
-        $item->setType($type);
-        $item->setTargetId($targetId);
-        $item->setUserId($userId);
+        $item->type = $type;
+        $item->targetId = $targetId;
+        $item->userId = $userId;
 
         return $item;
     }
@@ -113,6 +113,14 @@ class RatingService
         );
     }
 
+    public function countWith(Rating $rating): int
+    {
+        return $this->countRatings(
+            $rating->type,
+            $rating->targetId,
+        );
+    }
+
     public function countRatings(
         string|\BackedEnum $type,
         mixed $targetId,
@@ -120,6 +128,12 @@ class RatingService
         return (int) $this->createRatingQuery($type, $targetId)
             ->selectRaw('COUNT(*) AS count')
             ->result();
+    }
+
+    public function calcAvgWith(
+        Rating $rating
+    ): float {
+        return $this->calcAvgRank($rating->type, $rating->targetId);
     }
 
     public function calcAvgRank(
@@ -130,6 +144,14 @@ class RatingService
             ->selectRaw('IFNULL(AVG(%n), 0) AS %n', 'rank', 'rank')
             ->group('type', 'target_id')
             ->result();
+    }
+
+    public function reorderWith(Rating $rating): void
+    {
+        $this->reorderRatings(
+            $rating->type,
+            $rating->targetId,
+        );
     }
 
     public function reorderRatings(
@@ -151,7 +173,7 @@ class RatingService
 
         /** @var Rating $rating */
         foreach ($ratings as $i => $rating) {
-            $id = $rating->getId();
+            $id = $rating->id;
             $ordering = $i + 1;
 
             $query->execute();
@@ -183,7 +205,7 @@ class RatingService
         $user ??= $this->userService->getCurrentUser();
 
         if ($user instanceof UserEntityInterface) {
-            $userId = $user->getId();
+            $userId = $user->id;
         } else {
             $userId = $user;
         }

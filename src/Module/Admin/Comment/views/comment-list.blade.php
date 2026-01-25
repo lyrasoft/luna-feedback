@@ -91,7 +91,7 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
 
                     {{-- Reply --}}
                     <th class="text-nowrap">
-                        @lang('feedback.comment.field.reply')
+                        @lang('feedback.field.comment.reply')
                     </th>
 
                     {{-- Delete --}}
@@ -113,7 +113,7 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
                     <tr>
                         {{-- Checkbox --}}
                         <td>
-                            <x-row-checkbox :row="$i" :id="$item->getId()"></x-row-checkbox>
+                            <x-row-checkbox :row="$i" :id="$item->id"></x-row-checkbox>
                         </td>
 
                         {{-- State --}}
@@ -122,14 +122,14 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
                                 button-style="width: 100%"
                                 use-states
                                 :workflow="$workflow"
-                                :id="$item->getId()"
+                                :id="$item->id"
                                 :value="$item->state"
                             ></x-state-dropdown>
                         </td>
 
                         {{-- Edit --}}
                         <td class="text-nowrap">
-                            <a href="{{ $nav->to('comment_edit')->id($item->getId()) }}"
+                            <a href="{{ $nav->to('comment_edit')->id($item->id) }}"
                                 class="btn btn-sm btn-primary">
                                 <i class="fa fa-edit"></i>
                                 @lang('feedback.text.edit')
@@ -139,8 +139,8 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
                         {{-- User --}}
                         <td class="text-nowrap">
                             @php
-                                $avatar = $item->user?->avatar ?: $item->getAvatar() ?: $imgPlaceholder->avatar();
-                                $nickName = $item->user?->name ?: $item->getNickname() ?: $lang('feedback.text.anonymous');
+                                $avatar = $item->user?->avatar ?: $item->avatar ?: $imgPlaceholder->avatar();
+                                $nickName = $item->user?->name ?: $item->nickname ?: $lang('feedback.text.anonymous');
                             @endphp
 
                             <div class="d-flex align-items-center gap-2">
@@ -149,7 +149,7 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
                                         style="height: 28px">
                                 </div>
                                 <div class="small">
-                                    <a @attr('href', $item->getUserId() ? $nav->to('user_edit')->id($item->getUserId()) : null)
+                                    <a @attr('href', $item->userId ? $nav->to('user_edit')->id($item->userId) : null)
                                     target="_blank"
                                         class="link-secondary">
                                         {{ $nickName }}
@@ -162,23 +162,23 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
                         <td>
                             <div>
                                 <h5>
-                                    {{ $item->getTitle() }}
+                                    {{ $item->title }}
                                 </h5>
                             </div>
                             <div class="text-muted">
-                                {{ str($item->getContent())->stripHtmlTags()->truncate(100, '...') }}
+                                {{ str($item->content)->stripHtmlTags()->truncate(100, '...') }}
                             </div>
                         </td>
 
                         {{-- Reply --}}
                         <td>
-                            {{ str($item->getReply() ?? $item->last_reply?->content ?? '')->stripHtmlTags()->truncate(100, '...') }}
+                            {{ str($item->reply ?? $item->last_reply?->content ?? '')->stripHtmlTags()->truncate(100, '...') }}
                         </td>
 
                         {{-- Delete --}}
                         <td class="text-center">
                             <button type="button" class="btn btn-sm btn-outline-secondary"
-                                @click="grid.deleteItem('{{ $item->getId() }}')"
+                                @click="grid.deleteItem('{{ $item->id }}')"
                                 data-dos
                             >
                                 <i class="fa-solid fa-trash"></i>
@@ -187,7 +187,7 @@ $imgPlaceholder = $app->retrieve(ImagePlaceholder::class);
 
                         {{-- ID --}}
                         <td class="text-end">
-                            {{ $item->getId() }}
+                            {{ $item->id }}
                         </td>
                     </tr>
                 @empty

@@ -29,21 +29,21 @@ class CommentService
 
         $item = $this->orm->createEntity(Comment::class);
 
-        $item->setType($type);
-        $item->setTargetId($targetId);
-        $item->setUserId($user->getId());
-        $item->setNickname($user->getName());
+        $item->type = $type;
+        $item->targetId = $targetId;
+        $item->userId = $user->id;
+        $item->nickname = $user->name;
 
         if (method_exists($user, 'getEmail')) {
-            $item->setEmail($user->getEmail());
+            $item->email = $user->email;
         }
 
         if (method_exists($user, 'getAvatar')) {
-            $item->setAvatar($user->getAvatar());
+            $item->avatar = $user->avatar;
         }
 
-        $item->setContent($content);
-        $item->setState(1);
+        $item->content = $content;
+        $item->state = 1;
 
         return $item;
     }
@@ -81,9 +81,9 @@ class CommentService
 
         $user = $this->toUser($user);
 
-        $comment->setReplyUserId($user->getId());
-        $comment->setReply($replyContent);
-        $comment->setLastReplyAt($time);
+        $comment->replyUserId = $user->id;
+        $comment->reply = $replyContent;
+        $comment->lastReplyAt = $time;
 
         $this->orm->updateOne($comment);
 
@@ -103,12 +103,12 @@ class CommentService
         $user = $this->toUser($user);
 
         $reply = $this->createCommentItem(
-            $parent->getType(),
-            $parent->getTargetId(),
+            $parent->type,
+            $parent->targetId,
             $replyContent,
             $user,
         );
-        $reply->setParentId($parent->getId());
+        $reply->parentId = $parent->id;
 
         $reply = $this->handleExtraData($extra, $reply);
 
@@ -116,9 +116,9 @@ class CommentService
         $reply = $this->orm->createOne($reply);
 
         // Update parent
-        $parent->setReplyUserId($user->getId());
-        $parent->setLastReplyAt($reply->getCreated());
-        $parent->setLastReplyId($reply->getId());
+        $parent->replyUserId = $user->id;
+        $parent->lastReplyAt = $reply->created;
+        $parent->lastReplyId = $reply->id;
 
         $this->orm->updateOne($parent);
 
@@ -145,6 +145,16 @@ class CommentService
         return $item;
     }
 
+    public function countWith(Comment $comment, bool $lock = false): int
+    {
+        return $this->countComments(
+            $comment->type,
+            $comment->targetId,
+            $comment->parentId,
+            $lock,
+        );
+    }
+
     public function countComments(
         string|\BackedEnum $type,
         mixed $targetId,
@@ -155,9 +165,18 @@ class CommentService
             ->selectRaw('COUNT(*) AS count')
             ->tapIf(
                 $lock,
-                fn (Query $query) => $query->forUpdate()
+                fn(Query $query) => $query->forUpdate()
             )
             ->result();
+    }
+
+    public function reorderWith(Comment $comment, ?int $parentId = null): void
+    {
+        $this->reorderComments(
+            $comment->type,
+            $comment->targetId,
+            $parentId ?? $comment->parentId,
+        );
     }
 
     public function reorderComments(
@@ -180,7 +199,7 @@ class CommentService
 
         /** @var Comment $comment */
         foreach ($comments as $i => $comment) {
-            $id = $comment->getId();
+            $id = $comment->id;
             $ordering = $i + 1;
 
             $query->execute();
