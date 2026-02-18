@@ -12,6 +12,7 @@ Lyrasoft Feedback package, contains comments and rating functions.
   * [Register Admin Menu](#register-admin-menu)
   * [Comments](#comments)
     * [Comment Reply](#comment-reply)
+    * [Comment With Ratings](#comment-with-ratings)
     * [Other Methods](#other-methods)
   * [Rating](#rating)
     * [Other Methods](#other-methods-1)
