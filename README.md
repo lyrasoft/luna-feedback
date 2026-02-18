@@ -238,7 +238,7 @@ $commentService->reorderComments($type, $targetId);
 You can use Rating for the following purposes:
 
 1. **Like system**: Users can like content to show their supports. In this case, the Rating's `rank` field can always
-   be set to `1` as one LIKE. Afterwards, simply use `counr()` to count the total likes.
+   be set to `1` as one LIKE. Afterwards, simply use `count()` to count the total likes.
 2. **Star rating system**: Users can rate content with stars, e.g., from 1 to 5. In this case, the Rating's `rank` field 
    can be set to the numeric star chosen by the user, and you can use `calcAvgRank()` to calculate the average.
 
