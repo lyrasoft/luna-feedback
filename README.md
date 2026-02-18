@@ -57,7 +57,8 @@ php windwalker pkg:install lyrasoft/feedback -t lang
 
 ### Seeders
 
-There are 2 example seeders auto installed, add `comment.seeder.php` and `rating.seeder.php` to `resources/seeders/main.php`
+There are 2 example seeders auto installed, add `comment.seeder.php` and `rating.seeder.php` to
+`resources/seeders/main.php`
 
 ```php
 return [
@@ -234,6 +235,13 @@ $commentService->reorderComments($type, $targetId);
 
 ## Rating
 
+You can use Rating for the following purposes:
+
+1. **Like system**: Users can like content to show their supports. In this case, the Rating's `rank` field can always
+   be set to `1` as one LIKE. Afterwards, simply use `counr()` to count the total likes.
+2. **Star rating system**: Users can rate content with stars, e.g., from 1 to 5. In this case, the Rating's `rank` field 
+   can be set to the numeric star chosen by the user, and you can use `calcAvgRank()` to calculate the average.
+
 Add a rating to a type:
 
 ```php
@@ -245,7 +253,7 @@ $ratingService->addRating(
 );
 ```
 
-Add rating if not rated, and configure Comment entity:
+Add rating if not rated, and configure Rating entity:
 
 ```php
 use Lyrasoft\Feedback\Entity\Rating;
@@ -271,17 +279,24 @@ $newRating = $ratingService->addRating(
     'flower', // Type
     $targetId, // Target ID
     $user->id, // User ID or User entity
-    extra: function (Rating $rating) use ($ratingService) {
+    extra: function (Rating $rating) use ($ratingService, $targetId) {
         $count = $ratingService->countWith($rating);
         // OR
         $count = $rating->count();
     
         // This optional if you want to set ordering to one comment
         $rating->ordering = $count + 1;
+        
+        // Update origin rated item
+        $orm->updateBatch(
+            Target::class,
+            ['rating' => $ratingService->calcAvgWith($rating)],
+            $targetId,
+        );
     }
 );
 
-// Or reorder all comments of one target item.
+// Or reorder all ratings of one target item.
 $ratingService->reorderRatings(
     'flower', // Type
     $targetId, // Target ID
@@ -319,6 +334,7 @@ useRatingButtons();
 Then uou can add button components everywhere in blade template:
 
 ```bladehtml
+
 <div class="card c-item-card">
     <x-rating-button
         type="item"
@@ -372,7 +388,6 @@ return [
 
 You can also set the `ajax_type_protect` to `FALSE` but we don't recommend to do this.
 
-
 ### AJAX Events
 
 You can listen events after rated actions:
@@ -382,15 +397,15 @@ You can listen events after rated actions:
 const buttons = document.querySelectorAll('[uni-rating-button]');
 
 for (const button of buttons) {
-  button.addEventListener('rated', (e) => {
-    u.notify(e.detail.message, 'success');
-    
-    // Available details
-    e.detail.rated;
-    e.detail.type;
-    e.detail.task;
-    e.detail.message;
-  });
+    button.addEventListener('rated', (e) => {
+        u.notify(e.detail.message, 'success');
+
+        // Available details
+        e.detail.rated;
+        e.detail.type;
+        e.detail.task;
+        e.detail.message;
+    });
 }
 ```
 
@@ -409,7 +424,6 @@ document.addEventListener('rated', (e) => {
     }
 });
 ```
-
 
 ### Add Button to Vue App
 
@@ -430,7 +444,6 @@ Use `uni-rating-button` directive to auto enable button in Vue app.
     <i></i>
 </a>
 ```
-
 
 ## Use `RatingRepository`
 
