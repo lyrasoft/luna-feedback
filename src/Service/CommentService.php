@@ -125,6 +125,52 @@ class CommentService
         return $reply;
     }
 
+    public function isCommented(
+        string|\BackedEnum $type,
+        mixed $targetId,
+        mixed $user = null,
+        bool $lock = false
+    ): bool {
+        return (bool) $this->getComment($type, $targetId, $user, $lock);
+    }
+
+    public function getComment(
+        string|\BackedEnum $type,
+        mixed $targetId,
+        mixed $user = null,
+        bool $lock = false
+    ): ?Comment {
+        $userId = $this->toUserId($user);
+
+        /** @var ?Comment $item */
+        $item = $this->createCommentQuery($type, $targetId)
+            ->where('user_id', $userId)
+            ->tapIf(
+                $lock,
+                fn(Query $query) => $query->forUpdate()
+            )
+            ->get(Comment::class);
+
+        return $item;
+    }
+
+    public function removeComment(
+        string|\BackedEnum $type,
+        mixed $targetId,
+        mixed $user = null,
+    ): void {
+        $userId = $this->toUserId($user);
+
+        $this->orm->deleteBatch(
+            Comment::class,
+            [
+                'type' => $type,
+                'target_id' => $targetId,
+                'user_id' => $userId,
+            ]
+        );
+    }
+
     protected function toUser(mixed $user): UserEntityInterface
     {
         if ($user instanceof UserEntityInterface) {
@@ -167,6 +213,22 @@ class CommentService
                 $lock,
                 fn(Query $query) => $query->forUpdate()
             )
+            ->result();
+    }
+
+    public function calcAvgRatingWith(
+        Comment $rating
+    ): float {
+        return $this->calcAvgRating($rating->type, $rating->targetId);
+    }
+
+    public function calcAvgRating(
+        string|\BackedEnum $type,
+        mixed $targetId,
+    ): float {
+        return (float) $this->createCommentQuery($type, $targetId)
+            ->selectRaw('IFNULL(AVG(%n), 0) AS %n', 'rating', 'rating')
+            ->group('type', 'target_id')
             ->result();
     }
 
@@ -221,5 +283,18 @@ class CommentService
                 )
             )
             ->where('target_id', $targetId);
+    }
+
+    protected function toUserId(mixed $user): mixed
+    {
+        $user ??= $this->userService->getCurrentUser();
+
+        if ($user instanceof UserEntityInterface) {
+            $userId = $user->id;
+        } else {
+            $userId = $user;
+        }
+
+        return $userId;
     }
 }

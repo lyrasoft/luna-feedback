@@ -103,7 +103,7 @@ class RatingService
     ): void {
         $userId = $this->toUserId($user);
 
-        $this->orm->deleteWhere(
+        $this->orm->deleteBatch(
             Rating::class,
             [
                 'type' => $type,

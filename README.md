@@ -84,9 +84,9 @@ foreach ($articleIds as $articleId) {
             $faker->paragraph(4),
             $userId,
             extra: function (Comment $item) use ($faker) {
-                $item->setTitle($faker->sentence(2));
-                $item->setCreated($faker->dateTimeThisYear());
-                $item->setOrdering($item->count() + 1);
+                $item->title = $faker->sentence(2);
+                $item->created = $faker->dateTimeThisYear();
+                $item->ordering = $item->count() + 1;
             }
         );
     }
@@ -216,6 +216,38 @@ $commentService->reorderComments(
 $commentService->reorderWith($childComment);
 ```
 
+### Comment With Ratings
+
+If you want to add comment with ratings, you can simply add rating number to comment entity, and then update 
+the origin rated item with new average rating:
+
+```php
+/** @var \Lyrasoft\Feedback\Service\CommentService $commentService */
+$newComment = $commentService->addComment(
+    'flower', // Type
+    $targetId, // Target ID
+    'Comment Text...', // Content
+    $user->id, // User ID or User entity
+    extra: function (Comment $comment) use ($commentService) {
+        $comment->rating = 4; // If user mark as 4 star
+    }
+);
+
+// Update origin rated item
+$orm->updateBatch(
+    Target::class,
+    [
+        'rating_avg' => $commentService->calcAvgRatingWith($newComment),
+        'rating_count' => $commentService->countWith($newComment),
+    ],
+    $targetId,
+);
+```
+
+> ![note]
+> If you need a like system without comments, you can use `Rating` entity without `Comment` entity, 
+> and simply use `count()` to count total likes. See [Rating](#rating)
+
 ### Other Methods
 
 ```php
@@ -229,6 +261,17 @@ $count = $commentService->countComments($type, $targetId);
 
 // Reorder 
 $commentService->reorderComments($type, $targetId);
+
+// Calc average rating
+$avg = $commentService->calcAvgRating($type, $targetId);
+$avg = $commentService->calcAvgRatingWith($comment);
+
+// Check has commented
+$comment = $commentService->getComment($type, $targetId);
+$bool = $commentService->isCommented($type, $targetId);
+
+// Remove comment
+$commentService->removeComment($type, $targetId);
 ```
 
 -----
@@ -241,6 +284,10 @@ You can use Rating for the following purposes:
    be set to `1` as one LIKE. Afterwards, simply use `count()` to count the total likes.
 2. **Star rating system**: Users can rate content with stars, e.g., from 1 to 5. In this case, the Rating's `rank` field 
    can be set to the numeric star chosen by the user, and you can use `calcAvgRank()` to calculate the average.
+
+> [!note]
+> If you want users to leave comments while rating, it's recommended to use the `comments` table with a `rating` 
+> column, so you don't need a separate `ratings` table. See [Comment With Ratings](#comment-with-ratings)
 
 Add a rating to a type:
 
@@ -286,14 +333,14 @@ $newRating = $ratingService->addRating(
     
         // This optional if you want to set ordering to one comment
         $rating->ordering = $count + 1;
-        
-        // Update origin rated item
-        $orm->updateBatch(
-            Target::class,
-            ['rating' => $ratingService->calcAvgWith($rating)],
-            $targetId,
-        );
     }
+);
+
+// Update origin rated item
+$orm->updateBatch(
+    Target::class,
+    ['rating' => $ratingService->calcAvgWith($rating)],
+    $targetId,
 );
 
 // Or reorder all ratings of one target item.
@@ -317,6 +364,9 @@ $avg = $ratingService->calcAvgWith($rating);
 // Get rating item or check is rated
 $item = $ratingService->getRating($type, $targetId);
 $bool = $ratingService->isRated($type, $targetId);
+
+// Remove
+$ratingService->removeRating($type, $targetId);
 ```
 
 ## Rating AJAX Button
