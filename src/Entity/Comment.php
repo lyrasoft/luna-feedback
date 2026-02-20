@@ -49,7 +49,9 @@ class Comment implements EntityInterface
     public int $userId = 0;
 
     #[Column('type')]
-    public string $type = '';
+    public string $type = '' {
+        set(string|\BackedEnum $value) => unwrap_enum($value);
+    }
 
     #[Column('title')]
     public string $title = '';
