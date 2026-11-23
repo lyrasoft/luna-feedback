@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Lyrasoft\Feedback\Module\Front\Rating;
 
+use Lyrasoft\Feedback\Entity\Comment;
 use Lyrasoft\Feedback\Entity\Rating;
 use Lyrasoft\Feedback\FeedbackPackage;
 use Lyrasoft\Feedback\Service\RatingService;
@@ -14,11 +15,16 @@ use Windwalker\Core\Application\AppContext;
 use Windwalker\Core\Attributes\Controller;
 use Windwalker\Core\Attributes\Method;
 use Windwalker\Core\Security\Exception\UnauthorizedException;
+use Windwalker\ORM\ORM;
 
 #[Controller]
 class RatingController
 {
     use AjaxControllerTrait;
+
+    protected const MIN_RANK = 0;
+
+    protected const MAX_RANK = 5;
 
     #[Ajax]
     #[Method('POST')]
@@ -26,7 +32,8 @@ class RatingController
         AppContext $app,
         UserService $userService,
         FeedbackPackage $feedback,
-        RatingService $ratingService
+        RatingService $ratingService,
+        ORM $orm
     ): Rating {
         if (!$userService->isLogin()) {
             throw new UnauthorizedException('Please login', 401);
@@ -46,6 +53,12 @@ class RatingController
                 throw new UnauthorizedException('Invalid type', 401);
             }
         }
+
+        if ($rank < self::MIN_RANK || $rank > self::MAX_RANK) {
+            throw new \InvalidArgumentException('Invalid rank', 400);
+        }
+
+        $this->assertTargetExists($orm, $type, $targetId);
 
         $user = $userService->getUser();
 
@@ -96,5 +109,17 @@ class RatingController
         );
 
         return true;
+    }
+
+    protected function assertTargetExists(ORM $orm, mixed $type, mixed $targetId): void
+    {
+        $entityClass = match ($type) {
+            'comment' => Comment::class,
+            default => null,
+        };
+
+        if ($entityClass === null || !$orm->findOne($entityClass, $targetId)) {
+            throw new \InvalidArgumentException('Invalid target', 400);
+        }
     }
 }
