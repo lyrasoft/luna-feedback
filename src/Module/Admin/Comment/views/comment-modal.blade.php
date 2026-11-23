@@ -31,6 +31,16 @@ $workflow = $app->service(BasicStateWorkflow::class);
 
 @extends('admin.global.pure')
 
+@push('script')
+<script type="text/javascript">
+    for (const el of document.querySelectorAll('[data-task="post-message"]')) {
+        el.addEventListener('click', () => {
+            parent.postMessage([el.dataset.instanceId, JSON.parse(el.dataset.payload)], '{{ $uri->root() }}');
+        });
+    }
+</script>
+@endpush
+
 @section('body')
     <form id="admin-form" action="" x-data="{ grid: $store.grid }"
         x-ref="gridForm"
@@ -81,7 +91,9 @@ $workflow = $app->service(BasicStateWorkflow::class);
                         </td>
                         <td>
                             <a href="javascript://"
-                                onclick="parent.{{ $callback }}({{ json_encode($data) }})">
+                                data-task="post-message"
+                                data-instance-id="{{ $callback }}"
+                                data-payload="{{ json_encode($data) }}">
                                 {{ $item->title }}
                             </a>
                         </td>
